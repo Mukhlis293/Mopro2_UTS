@@ -4,6 +4,31 @@ void main() {
   runApp(const MyApp());
 }
 
+
+class MovieService {
+  
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
+
+
+  Future<void> refreshData() async {
+    if (isLoading.value) return;
+
+    isLoading.value = true;
+    print("Memulai proses refresh data...");
+
+    // Simulasi proses memuat data dari API
+    await Future.delayed(const Duration(seconds: 2));
+
+    isLoading.value = false;
+    print("Data berhasil di-refresh!");
+  }
+}
+
+
+final MovieService movieService = MovieService();
+
+
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -67,111 +92,94 @@ class _MovieHomeShellState extends State<MovieHomeShell> {
   }
 }
 
-class MovieHomePage extends StatefulWidget {
+
+
+class MovieHomePage extends StatelessWidget {
   const MovieHomePage({super.key});
 
-  @override
-  State<MovieHomePage> createState() => _MovieHomePageState();
-}
-
-class _MovieHomePageState extends State<MovieHomePage> {
-  // Variabel state untuk menunjukkan apakah sedang loading/refresh
-  bool _isLoading = false;
-
   final List<String> trendingImageUrls = const [
-    'images/galaksi.png',
-    'https://image.tmdb.org/t/p/w185/kGrx7fD2oFvN0P0E3X6M5M7fQ4T.jpg',
+    'images/trending/galaksi.png',
     'https://image.tmdb.org/t/p/w185/pWQgb7Q0UeG4V4z8R7u4eJpP2hG.jpg',
     'https://image.tmdb.org/t/p/w185/b0Ej6fnXAP8fK75hlyi2jKqgCNd.jpg',
     'https://image.tmdb.org/t/p/w185/qloJ8Q2h3G4r7sO74WnIuN4L3tM.jpg',
+    'https://image.tmdb.org/t/p/w185/kqjL17yufvn9AEZRDPzMG3ikQOp.jpg',
   ];
 
   final List<String> popularImageUrls = const [
     'images/popular/joker.jpeg',
-    'https://image.tmdb.org/t/p/w185/r0Y6gD229qgSjR2D6yKjJgLgqB8.jpg',
     'https://image.tmdb.org/t/p/w185/xqw5z1mK7L5S8V8vLqD7W7rJ0bE.jpg',
     'https://image.tmdb.org/t/p/w185/A2E05dJ8HkX2j9zU2B9N8f1eN6h.jpg',
     'https://image.tmdb.org/t/p/w185/hu40Uxp9WtpL3NofOOdLgGVRs4.jpg',
+    'https://image.tmdb.org/t/p/w185/f8y80w4JgKx3s15eR0O2Fw5vW2f.jpg',
   ];
 
   final List<String> topRatedImageUrls = const [
     'images/top rated/loerm.jpg',
-    'https://image.tmdb.org/t/p/w185/qJ2tW6WMUDux911r6m7EFYl46sU.jpg',
     'https://image.tmdb.org/t/p/w185/aMsZtYf1u57qI0B0cDYm0Dk2f7m.jpg',
     'https://image.tmdb.org/t/p/w185/oo2mC3h4t0Wc3QWv5xQJv6gL6Q.jpg',
     'https://image.tmdb.org/t/p/w185/pHMufP01X0vE1bX5682jWJ9tF0M.jpg',
+    'https://image.tmdb.org/t/p/w185/tN33yQn3e120P8vjR2Q82G59qR9.jpg',
   ];
-
-  // Fungsi untuk menangani refresh (dipanggil oleh Pull-to-Refresh & Tombol)
-  Future<void> _handleRefresh() async {
-    if (_isLoading) return; // Mencegah refresh ganda
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulasi proses memuat data dari API
-    await Future.delayed(const Duration(seconds: 2));
-
-    setState(() {
-      _isLoading = false;
-      print("Data berhasil di-refresh!");
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      color: Colors.red,
-      backgroundColor: Colors.black,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Meneruskan fungsi refresh ke NowPlayingSection
-            NowPlayingSection(
-              onRefreshPressed: _handleRefresh,
-              isLoading: _isLoading,
+   
+    return ValueListenableBuilder<bool>(
+      valueListenable: movieService.isLoading,
+      builder: (context, isLoading, child) {
+        return RefreshIndicator(
+          onRefresh: movieService.refreshData,
+          color: Colors.red,
+          backgroundColor: Colors.black,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+              
+                NowPlayingSection(
+                  onRefreshPressed: movieService.refreshData,
+                  isLoading: isLoading, 
+                ),
+                const SizedBox(height: 20),
+                MovieSection(
+                  title: 'Trending',
+                  height: 180,
+                  itemCount: trendingImageUrls.length,
+                  itemBuilder: (context, index) => MoviePoster(
+                    width: 120,
+                    imageUrl: trendingImageUrls[index],
+                  ),
+                ),
+                MovieSection(
+                  title: 'Popular',
+                  height: 180,
+                  itemCount: popularImageUrls.length,
+                  itemBuilder: (context, index) => MoviePoster(
+                    width: 120,
+                    imageUrl: popularImageUrls[index],
+                  ),
+                ),
+                MovieSection(
+                  title: 'Top Rated',
+                  height: 180,
+                  itemCount: topRatedImageUrls.length,
+                  itemBuilder: (context, index) => MoviePoster(
+                    width: 120,
+                    imageUrl: topRatedImageUrls[index],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 20),
-            MovieSection(
-              title: 'Trending',
-              height: 180,
-              itemCount: trendingImageUrls.length,
-              itemBuilder: (context, index) => MoviePoster(
-                width: 120,
-                imageUrl: trendingImageUrls[index],
-              ),
-            ),
-            MovieSection(
-              title: 'Popular',
-              height: 180,
-              itemCount: popularImageUrls.length,
-              itemBuilder: (context, index) => MoviePoster(
-                width: 120,
-                imageUrl: popularImageUrls[index],
-              ),
-            ),
-            MovieSection(
-              title: 'Top Rated',
-              height: 180,
-              itemCount: topRatedImageUrls.length,
-              itemBuilder: (context, index) => MoviePoster(
-                width: 120,
-                imageUrl: topRatedImageUrls[index],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-// --- WIDGET NowPlayingSection (DIUBAH UNTUK TOMBOL REFRESH) ---
+
 class NowPlayingSection extends StatelessWidget {
   final Future<void> Function() onRefreshPressed;
   final bool isLoading;
@@ -189,7 +197,7 @@ class NowPlayingSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row untuk Teks 'Now Playing' dan Tombol Refresh
+
           Padding(
             padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
             child: Row(
@@ -203,9 +211,9 @@ class NowPlayingSection extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                // Tombol Refresh/Indikator Loading
+               
                 GestureDetector(
-                  onTap: isLoading ? null : onRefreshPressed, // Nonaktifkan jika sedang loading
+                  onTap: isLoading ? null : onRefreshPressed, 
                   child: isLoading
                       ? const SizedBox(
                           width: 24,
@@ -218,13 +226,13 @@ class NowPlayingSection extends StatelessWidget {
                         )
                       : const Icon(
                           Icons.refresh,
-                          color: Colors.red, // Ikon merah untuk mencocokkan aksen
+                          color: Colors.red, 
                         ),
                 ),
               ],
             ),
           ),
-          // Sisa PageView Carousel
+         
           Expanded(
             child: PageView.builder(
               itemCount: 10,
@@ -233,6 +241,7 @@ class NowPlayingSection extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
+                   
                     image: const DecorationImage(
                       image: NetworkImage('https://www.xtrafondos.com/wallpapers/vertical/deadpool-y-wolverine-12232.jpg'),
                       fit: BoxFit.cover,
@@ -308,8 +317,6 @@ class NowPlayingSection extends StatelessWidget {
     );
   }
 }
-
-// --- WIDGET MoviePoster dan MovieSection TIDAK BERUBAH ---
 
 class MoviePoster extends StatelessWidget {
   final double width;
